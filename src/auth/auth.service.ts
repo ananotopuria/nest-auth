@@ -6,6 +6,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
+import { Role } from '../users/enums/role.enum';
 import { SignInDto } from './dto/sign-in.dto';
 import { SignUpDto } from './dto/sign-up.dto';
 
@@ -33,9 +34,11 @@ export class AuthService {
       password: hashedPassword,
     });
 
+    const role = user.role ?? Role.USER;
     const accessToken = await this.generateToken(
       user._id.toString(),
       user.email,
+      role,
     );
 
     return {
@@ -44,6 +47,7 @@ export class AuthService {
         id: user._id,
         name: user.name,
         email: user.email,
+        role,
       },
       accessToken,
     };
@@ -68,9 +72,11 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
+    const role = user.role ?? Role.USER;
     const accessToken = await this.generateToken(
       user._id.toString(),
       user.email,
+      role,
     );
 
     return {
@@ -79,15 +85,21 @@ export class AuthService {
         id: user._id,
         name: user.name,
         email: user.email,
+        role,
       },
       accessToken,
     };
   }
 
-  private generateToken(userId: string, email: string): Promise<string> {
+  private generateToken(
+    userId: string,
+    email: string,
+    role: Role,
+  ): Promise<string> {
     const payload = {
       sub: userId,
       email,
+      role,
     };
 
     return this.jwtService.signAsync(payload);
